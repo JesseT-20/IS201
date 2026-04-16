@@ -1,0 +1,15 @@
+.bg-primary {
+    background-color: rgb(49, 113, 233) !important;
+}
+.text-primary{
+    color: rgb(49, 113, 233) !important;
+}
+.element.style {
+    color: rgb(49, 113, 233) !important;
+}
+a {
+    color: rgb(49, 113, 233);
+}
+.social-icon{
+    color: rgb(49, 113, 233);
+}

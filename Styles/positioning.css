@@ -1,0 +1,86 @@
+/* General page cleanup */
+body {
+    margin: 0;
+    padding: 20px;
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centers everything */
+}
+
+/* Header: Removed absolute positioning */
+.header_div {
+    width: 100%;
+    max-width: 800px;
+    text-align: center;
+    padding: 10px;
+    border: solid black 2px;
+    background-color: white;
+    margin-bottom: 20px;
+}
+
+/* The Magic: This handles the side-by-side layout */
+.main-layout {
+    display: flex;
+    flex-wrap: wrap;      /* This makes it stack on mobile! */
+    justify-content: center;
+    gap: 20px;
+    width: 100%;
+    max-width: 1200px;
+    margin-bottom: 40px;
+}
+
+.Left_Menu, .Right_Menu {
+    width: 180px;         /* Fixed width for menus */
+    padding: 10px;
+    border: solid black 2px;
+    background-color: white;
+    min-height: 300px;
+}
+
+.photo_center {
+    flex: 1;              /* Takes up remaining space */
+    min-width: 300px;     /* Prevents image from getting too tiny */
+    text-align: center;
+}
+
+.photo_center img {
+    max-width: 100%;      /* Makes image responsive */
+    height: auto;
+}
+
+/* Keeps your text content neat */
+.content_area {
+    max-width: 800px;
+    width: 100%;
+    line-height: 1.6;
+}
+
+/* Responsive Video */
+.video_container {
+    position: relative;
+    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+    height: 0;
+    margin-bottom: 20px;
+}
+
+.video_container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* Footer: Natural positioning at the bottom */
+.Footer_div {
+    display: block;
+    width: 200px;
+    text-align: center;
+    padding: 10px;
+    border: solid black 2px;
+    background-color: white;
+    text-decoration: none;
+    color: black;
+    margin-top: 50px;
+}

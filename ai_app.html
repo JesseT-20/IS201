@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power-Shot Tennis Open</title>
+    <a href="from_scratch.html" style="
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #4a90e2;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    font-family: sans-serif;
+    margin: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    ">
+    ← Go to From Scratch
+    </a>
+    <style>
+        :root {
+            --court-green: #2e7d32;
+            --ball-yellow: #ccff00;
+            --ui-panel: rgba(0, 0, 0, 0.8);
+        }
+
+        body {
+            margin: 0;
+            background: #1a1a1a;
+            color: white;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            border: 8px solid #fff;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        canvas {
+            background-color: var(--court-green);
+            display: block;
+        }
+
+        /* Scoreboard */
+        #scoreboard {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--ui-panel);
+            padding: 10px 30px;
+            border: 2px solid white;
+            text-align: center;
+            min-width: 300px;
+            pointer-events: none;
+        }
+
+        .score-line {
+            display: flex;
+            justify-content: space-between;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .serving-dot { color: var(--ball-yellow); opacity: 0; }
+        .is-serving .serving-dot { opacity: 1; }
+
+        /* Power Meter */
+        #power-container {
+            position: absolute;
+            left: -40px;
+            bottom: 0;
+            width: 20px;
+            height: 150px;
+            background: #333;
+            border: 2px solid #fff;
+        }
+
+        #power-fill {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 0%;
+            background: linear-gradient(to top, #4CAF50, #FFEB3B, #f44336);
+            transition: height 0.05s;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 24px;
+            background: var(--ball-yellow);
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        .hint { font-size: 14px; color: #aaa; margin-top: 10px; text-align: center; }
+    </style>
+</head>
+<body onload="init()">
+    
+    <!-- <a href="from_scratch.html" style="...">← Go to From Scratch</a> -->
+    
+    <div id="game-container">
+        ...
+    </div>
+
+    <div id="game-container">
+        <div id="scoreboard">
+            <div id="p-row" class="score-line is-serving">
+                <span><span class="serving-dot">●</span> PLAYER</span>
+                <span id="p-score">Love</span>
+            </div>
+            <div id="c-row" class="score-line">
+                <span><span class="serving-dot">●</span> CPU</span>
+                <span id="c-score">Love</span>
+            </div>
+        </div>
+
+        <div id="power-container">
+            <div id="power-fill"></div>
+        </div>
+
+        <div id="overlay">
+            <h1 id="title">POWER TENNIS</h1>
+            <div class="hint">
+                UP/DOWN ARROWS to Move<br>
+                HOLD SPACE to Charge Power<br>
+                RELEASE SPACE to Swing
+            </div>
+            <button onclick="startGame()">START MATCH</button>
+        </div>
+
+        <canvas id="court" width="800" height="500"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('court');
+        const ctx = canvas.getContext('2d');
+        const powerFill = document.getElementById('power-fill');
+        
+        // Game Constants
+        const P_WIDTH = 40;
+        const P_HEIGHT = 70;
+        const BASE_SPEED = 4.5;
+        const MAX_POWER_SPEED = 14;
+
+        // Game State
+        let ball = { x: 400, y: 250, vx: 0, vy: 0, radius: 6 };
+        let player = { y: 215, score: 0, power: 0, charging: false };
+        let cpu = { y: 215, score: 0 };
+        let keys = {};
+        let gameRunning = false;
+        let server = 'player'; // 'player' or 'cpu'
+
+        function init() {
+            window.addEventListener('keydown', e => keys[e.code] = true);
+            window.addEventListener('keyup', e => keys[e.code] = false);
+            draw();
+        }
+
+        function startGame() {
+            document.getElementById('overlay').style.display = 'none';
+            player.score = 0;
+            cpu.score = 0;
+            updateScoreboard();
+            resetBall();
+            gameRunning = true;
+            loop();
+        }
+
+        function resetBall() {
+            ball.x = server === 'player' ? 60 : 740;
+            ball.y = canvas.height / 2;
+            ball.vx = server === 'player' ? BASE_SPEED : -BASE_SPEED;
+            ball.vy = (Math.random() - 0.5) * 2;
+        }
+
+        function updateScoreboard() {
+            const tennisScores = ["Love", "15", "30", "40"];
+            const p = player.score;
+            const c = cpu.score;
+
+            document.getElementById('p-row').className = server === 'player' ? 'score-line is-serving' : 'score-line';
+            document.getElementById('c-row').className = server === 'cpu' ? 'score-line is-serving' : 'score-line';
+
+            if (p >= 3 && c >= 3) {
+                if (p === c) {
+                    document.getElementById('p-score').innerText = "Deuce";
+                    document.getElementById('c-score').innerText = "Deuce";
+                } else if (p > c) {
+                    document.getElementById('p-score').innerText = "Ad";
+                    document.getElementById('c-score').innerText = "40";
+                } else {
+                    document.getElementById('p-score').innerText = "40";
+                    document.getElementById('c-score').innerText = "Ad";
+                }
+            } else {
+                document.getElementById('p-score').innerText = tennisScores[p] || "Game";
+                document.getElementById('c-score').innerText = tennisScores[c] || "Game";
+            }
+        }
+
+        function checkGameWin() {
+            const p = player.score;
+            const c = cpu.score;
+            if ((p >= 4 || c >= 4) && Math.abs(p - c) >= 2) {
+                gameRunning = false;
+                document.getElementById('overlay').style.display = 'flex';
+                document.getElementById('title').innerText = p > c ? "YOU WON!" : "CPU WON";
+            }
+        }
+
+        function loop() {
+            if (!gameRunning) return;
+
+            // Player Movement
+            if (keys['ArrowUp'] && player.y > 10) player.y -= 5;
+            if (keys['ArrowDown'] && player.y < canvas.height - P_HEIGHT - 10) player.y += 5;
+
+            // Power Charging
+            if (keys['Space']) {
+                player.power = Math.min(player.power + 1.5, 100);
+                player.charging = true;
+            } else {
+                player.charging = false;
+                // Power slowly bleeds off if not holding space
+                if (player.power > 0) player.power -= 2;
+            }
+            powerFill.style.height = player.power + '%';
+
+            // CPU AI (Slow and steady)
+            let cpuCenter = cpu.y + P_HEIGHT/2;
+            if (cpuCenter < ball.y - 10) cpu.y += 3.5;
+            if (cpuCenter > ball.y + 10) cpu.y -= 3.5;
+
+            // Ball Physics
+            ball.x += ball.vx;
+            ball.y += ball.vy;
+
+            // Wall Bounce
+            if (ball.y < 5 || ball.y > canvas.height - 5) ball.vy *= -1;
+
+            // Player Collision
+            if (ball.x < 50 && ball.x > 30 && ball.y > player.y && ball.y < player.y + P_HEIGHT) {
+                // Calculate "Risk"
+                // At 100 power, miss_factor is high
+                let miss_chance = player.power / 100;
+                let randomness = (Math.random() - 0.5) * (miss_chance * 10);
+                
+                ball.vx = BASE_SPEED + (player.power / 100) * (MAX_POWER_SPEED - BASE_SPEED);
+                ball.vy = ((ball.y - (player.y + P_HEIGHT/2)) * 0.1) + randomness;
+                ball.x = 51;
+            }
+
+            // CPU Collision (CPU always hits safe, medium speed)
+            if (ball.x > 750 && ball.x < 770 && ball.y > cpu.y && ball.y < cpu.y + P_HEIGHT) {
+                ball.vx = -BASE_SPEED - 2;
+                ball.vy = (ball.y - (cpu.y + P_HEIGHT/2)) * 0.1;
+                ball.x = 749;
+            }
+
+            // Scoring
+            if (ball.x < 0) {
+                cpu.score++;
+                server = 'player';
+                resetBall();
+                updateScoreboard();
+                checkGameWin();
+            } else if (ball.x > canvas.width) {
+                player.score++;
+                server = 'cpu';
+                resetBall();
+                updateScoreboard();
+                checkGameWin();
+            }
+
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        function drawPlayer(x, y, color) {
+            ctx.fillStyle = color;
+            // Body
+            ctx.fillRect(x + 15, y + 20, 10, 30);
+            // Head
+            ctx.beginPath();
+            ctx.arc(x + 20, y + 10, 8, 0, Math.PI*2);
+            ctx.fill();
+            // Limbs
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x+20, y+50); ctx.lineTo(x+10, y+70); // Leg L
+            ctx.moveTo(x+20, y+50); ctx.lineTo(x+30, y+70); // Leg R
+            ctx.stroke();
+            // Racket Arm
+            ctx.beginPath();
+            ctx.moveTo(x+20, y+25);
+            ctx.lineTo(x + (color==='#3498db'? 40 : 0), y+10);
+            ctx.stroke();
+        }
+
+        function draw() {
+            // Court
+            ctx.fillStyle = '#2e7d32';
+            ctx.fillRect(0,0, canvas.width, canvas.height);
+            
+            // Lines
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(20, 20, canvas.width-40, canvas.height-40);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width/2, 20); ctx.lineTo(canvas.width/2, canvas.height-20);
+            ctx.stroke();
+
+            // Ball
+            ctx.fillStyle = '#ccff00';
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
+            ctx.fill();
+
+            // Players
+            drawPlayer(20, player.y, '#3498db');
+            drawPlayer(740, cpu.y, '#e74c3c');
+        }
+    </script>
+</body>
+</html>

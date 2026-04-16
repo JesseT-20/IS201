@@ -1,0 +1,46 @@
+/* This is a comment in CSS */
+/* element selector, use an element name */
+/* and it will affect any content in that element */
+
+body {
+    color: black;
+    background-color: rgb(205, 252, 136);
+}
+
+p{
+    color:rgb(0, 0, 0);
+}
+
+li{
+    color:rgb(0, 0, 0);
+}
+/* class selector */
+/* this is to apply formatting to specific areas based on the "class"
+    attribute, rather than entire elements */
+
+.special_text{
+    /* color:purple; */
+    font-style: italic;
+}
+
+.return_text{
+    color:rgb(255, 23, 255);
+}
+
+.bold_important_text{
+    color:rgb(0, 0, 0);
+    font-weight: bold;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+}
+
+/* You change change formatting based on the state of something.
+this is commin for links with a element. Use : to choose a state */
+
+a:hover{
+    text-decoration: line-through;
+}
+
+a:visited{
+    color:rgb(117, 117, 117);
+}
+
